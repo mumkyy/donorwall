@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Donor Wall{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('donor_wall.donor_wall_styles') }}">
+
+<!-- Optional spacer -->
+<div class="spacer" style="height: 50px; opacity: 0;"></div>
+
+<!-- The container has a fixed size with overflow hidden -->
+<div class="scroll-container" id="scroll-container">
+  <div class="scroll-wrapper" id="scroll-wrapper">
+    <!-- Primary donor list -->
+    <div class="donor-list" id="donor-list-1">
+      {% for donor in donors %}
+        <p class="donor-item">
+          {{ donor[0] }}
+        </p>
+      {% endfor %}
+    </div>
+    <!-- Duplicate donor list -->
+    <div class="donor-list" id="donor-list-2">
+      {% for donor in donors %}
+        <p class="donor-item">
+          {{ donor[0] }}
+        </p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Element references.
+  const container = document.getElementById("scroll-container");
+  const wrapper = document.getElementById("scroll-wrapper");
+  const list1 = document.getElementById("donor-list-1");
+  const list2 = document.getElementById("donor-list-2");
+
+  // Configuration values passed in from the backend.
+  const SCROLL_SPEED = parseFloat("{{ scroll_speed|default(50) }}"); // pixels per second
+  const SCROLL_DIRECTION = "{{ scroll_direction|default('up') }}"; // 'up', 'down', 'left', or 'right'
+  const isVertical = (SCROLL_DIRECTION === "up" || SCROLL_DIRECTION === "down");
+  const isReverse = (SCROLL_DIRECTION === "down" || SCROLL_DIRECTION === "right");
+
+  function updateFadePadding() {
+    const base = isVertical ? container.offsetHeight : container.offsetWidth;
+    const fadePad = Math.max(Math.round(base * 0.18), 40); // match mask gradient (~18%) and give a minimum
+    const padY = isVertical ? fadePad : 0;
+    const padX = isVertical ? 0 : fadePad;
+    list1.style.setProperty("--fade-padding-y", `${padY}px`);
+    list1.style.setProperty("--fade-padding-x", `${padX}px`);
+    list2.style.setProperty("--fade-padding-y", `${padY}px`);
+    list2.style.setProperty("--fade-padding-x", `${padX}px`);
+  }
+
+  function rebuildDuplicate() {
+    list2.innerHTML = list1.innerHTML;
+  }
+
+  function refreshAnimation() {
+    updateFadePadding();
+    const donorListDimension = isVertical ? list1.offsetHeight : list1.offsetWidth;
+    const distance = Math.max(donorListDimension, 1);
+    const speed = isNaN(SCROLL_SPEED) || SCROLL_SPEED <= 0 ? 50 : SCROLL_SPEED;
+    const duration = Math.max(distance / speed, 5); // seconds
+    wrapper.style.setProperty('--scroll-distance', `${distance}px`);
+    wrapper.style.setProperty('--scroll-duration', `${duration}s`);
+    wrapper.style.animationName = isVertical ? 'scrollY' : 'scrollX';
+    wrapper.style.animationDirection = isReverse ? 'reverse' : 'normal';
+    wrapper.classList.remove('run');
+    wrapper.classList.remove('fade-visible');
+    void wrapper.offsetWidth; // force reflow
+    wrapper.classList.add('run');
+    requestAnimationFrame(() => {
+      wrapper.classList.add('fade-visible');
+    });
+  }
+
+  function rebuildLists(names) {
+    list1.innerHTML = names.map(n => `<p class="donor-item">${n}</p>`).join("");
+    rebuildDuplicate();
+    refreshAnimation();
+  }
+
+  // Initial setup from server-rendered donors
+  rebuildDuplicate();
+  refreshAnimation();
+
+  /**
+   * updateDonors()
+   *
+   * Polls your API for new donor data and rebuilds the donor list if needed.
+   */
+  async function updateDonors() {
+    try {
+      const response = await fetch("/api/donors");
+      if (!response.ok) throw new Error("Network response was not ok");
+      const donors = await response.json();
+      const incomingNames = donors
+        .map(d => (d && d.name ? String(d.name).trim() : ""))
+        .filter(Boolean);
+
+      const currentNames = Array.from(list1.querySelectorAll('.donor-item')).map(el => el.textContent.trim());
+      const hasChange = incomingNames.length !== currentNames.length ||
+        incomingNames.some((name, idx) => name !== currentNames[idx]);
+
+      if (hasChange) {
+        rebuildLists(incomingNames);
+      }
+    } catch (error) {
+      console.error("Error updating donors:", error);
+    }
+  }
+
+  // Poll for donor updates every 15 seconds.
+  setInterval(updateDonors, 15000);
+
+  // On window resize, recalc dimensions and update duplicate.
+  window.addEventListener("resize", () => {
+    refreshAnimation();
+  });
+});
+</script>
+{% endblock %}

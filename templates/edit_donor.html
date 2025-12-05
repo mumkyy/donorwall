@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Donor{% endblock %}
+
+{% block content %}
+<h1>Edit Donor</h1>
+
+<form method="POST" action="{{ url_for('admin.edit_donor', donor_id=donor[0]) }}">
+    <label for="name">Donor Name:</label>
+    <input type="text" id="name" name="name" value="{{ donor[1] }}" required>
+    <br><br>
+    <label for="amount">Amount (optional):</label>
+    <input type="number" id="amount" name="amount" step="0.01" value="{{ donor[2] or '' }}" placeholder="Optional">
+    <br><br>
+    <button type="submit">Update Donor</button>
+</form>
+
+<a href="{{ url_for('admin.manage_donors') }}">Back to Donor List</a>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Settings{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Admin Configuration</h1>
+    <form method="post" enctype="multipart/form-data">
+        <label for="background_image">Background Image:</label>
+        <input type="file" name="background_image" id="background_image">
+        <br><br>
+
+        <label for="font_size">Font Size (px):</label>
+        <input type="number" name="font_size" id="font_size" value="{{ settings[1] }}">
+        <br><br>
+
+        <label for="font_color">Font Color:</label>
+        <input type="color" name="font_color" id="font_color" value="{{ settings[5] }}">
+        <br><br>
+
+        <label for="scroll_speed">Scroll Speed (seconds):</label>
+        <input type="number" name="scroll_speed" id="scroll_speed" value="{{ settings[2] }}">
+        <br><br>
+
+        <label for="scroll_direction">Scroll Direction:</label>
+        <select name="scroll_direction" id="scroll_direction">
+            <option value="up" {% if settings[6] == 'up' %}selected{% endif %}>Up</option>
+            <option value="down" {% if settings[6] == 'down' %}selected{% endif %}>Down</option>
+            <option value="left" {% if settings[6] == 'left' %}selected{% endif %}>Left</option>
+            <option value="right" {% if settings[6] == 'right' %}selected{% endif %}>Right</option>
+        </select>
+        <br><br>
+
+        <label for="scroll_position">Scroll Box Position:</label>
+        <select name="scroll_position" id="scroll_position">
+            <option value="top" {% if settings[7] == 'top' %}selected{% endif %}>Top</option>
+            <option value="center" {% if settings[7] == 'center' %}selected{% endif %}>Center</option>
+            <option value="bottom" {% if settings[7] == 'bottom' %}selected{% endif %}>Bottom</option>
+            <option value="left" {% if settings[7] == 'left' %}selected{% endif %}>Left</option>
+            <option value="right" {% if settings[7] == 'right' %}selected{% endif %}>Right</option>
+        </select>
+        <br><br>
+
+        <label for="scroll_width">Scroll Box Width (px):</label>
+        <input type="number" name="scroll_width" id="scroll_width" value="{{ settings[8] }}">
+        <br><br>
+
+        <label for="scroll_height">Scroll Box Height (px):</label>
+        <input type="number" name="scroll_height" id="scroll_height" value="{{ settings[9] }}">
+        <br><br>
+
+        <!-- New Fields for Donor Data Source -->
+        <label for="google_sheet_id">Google Sheet ID:</label>
+        <input type="text" name="google_sheet_id" id="google_sheet_id" value="{{ settings[3] }}">
+        <br><br>
+
+        <label for="donor_website">Donor Website URL:</label>
+        <input type="text" name="donor_website" id="donor_website" value="{{ settings[4] }}">
+        <br><br>
+
+        <button type="submit">Save Settings</button>
+    </form>
+</div>
+
+<h2>Manage Donors</h2>
+<p>Click below to add, edit, or delete donors.</p>
+<a href="{{ url_for('admin.manage_donors') }}" class="button">Go to Donor Management</a>
+{% endblock %}

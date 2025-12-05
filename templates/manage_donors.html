@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Donors{% endblock %}
+
+{% block content %}
+<h1>Manage Donors</h1>
+
+<!-- Add Donor Form -->
+<h2>Add New Donor</h2>
+<form method="POST" action="{{ url_for('admin.manage_donors') }}">
+    <input type="text" name="name" placeholder="Donor Name" required>
+    <input type="number" name="amount" step="0.01" placeholder="Amount (optional)">
+    <button type="submit">Add Donor</button>
+</form>
+
+<hr>
+
+<!-- Donor List -->
+<h2>Existing Donors</h2>
+<table border="1" cellpadding="10" cellspacing="0">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for donor in donors %}
+        <tr>
+            <td>{{ donor[0] }}</td>
+            <td>{{ donor[1] }}</td>
+            <td>
+                {% if donor[2] %}
+                    ${{ "%.2f" | format(donor[2]) }}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>
+                <!-- Edit Donor -->
+                <a href="{{ url_for('admin.edit_donor', donor_id=donor[0]) }}">Edit</a>
+                <!-- Delete Donor -->
+                <form method="POST" action="{{ url_for('admin.delete_donor', donor_id=donor[0]) }}" style="display:inline;">
+                    <button type="submit" onclick="return confirm('Are you sure you want to delete this donor?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
