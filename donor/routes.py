@@ -101,33 +101,6 @@ def _extract_donor_names(soup):
     return names
 
 
-def _load_local_donors(file_candidates):
-    """
-    Load donor names from cached local HTML files (e.g., previously downloaded GiveCampus pages).
-    Returns a deduped list of names.
-    """
-    collected = []
-    for path_str in file_candidates:
-        if not path_str:
-            continue
-        path = Path(path_str)
-        if not path.exists():
-            continue
-        try:
-            soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
-            collected.extend(_extract_donor_names(soup))
-        except Exception as exc:
-            print(f"Warning: failed to load donors from {path}: {exc}")
-    # Deduplicate while preserving order
-    seen = set()
-    deduped = []
-    for name in collected:
-        if name and name not in seen:
-            deduped.append(name)
-            seen.add(name)
-    return deduped
-
-
 def _cache_response(text, path_value):
     """
     Save fetched HTML to disk so we can re-use it when scraping fails.
@@ -166,6 +139,8 @@ def _build_http_client():
             if "=" in part:
                 k, v = part.strip().split("=", 1)
                 session.cookies.set(k, v, domain=".give.njit.edu")
+        # Also set raw Cookie header to exactly mirror curl use.
+        session.headers["Cookie"] = cookie_string
     return session
 
 
@@ -462,19 +437,6 @@ def scrape_donors():
             donors_list.extend(donors_from_web)
         except Exception as e:
             print("Error scraping from donor website with Selenium:", e)
-
-    # Fallback: local cached HTML files so we can still display donors without live fetch.
-    if not donors_list:
-        local_candidates = [
-            os.getenv("DONOR_LOCAL_MODAL_FILE"),  # highest priority (all donors modal)
-            os.getenv("DONOR_LOCAL_FILE"),
-            os.getenv("DONOR_CACHE_MODAL_FILE"),
-            os.getenv("DONOR_CACHE_MAIN_FILE"),
-            "campaign_donors_72810_all.html",     # repo-cached modal by default
-            "honors-winter-gala.html",            # repo-cached main page
-        ]
-        local_names = _load_local_donors(local_candidates)
-        donors_list.extend([(name, None) for name in local_names])
 
     if not donors_list:
         return jsonify({"message": "No donor data found from configured source."}), 400
